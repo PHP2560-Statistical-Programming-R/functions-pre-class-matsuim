@@ -5,28 +5,12 @@ date: "September 29, 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-
-
-
-
-
-
 Standardizing a variable means subtracting the mean, and then dividing by the standard deviation. Let’s use a loop to standardize the numeric columns in the [Western Collaborative Group Study](https://clinicaltrials.gov/ct2/show/NCT00005174). This study began in 1960 with 3154 men ages 39-59, who were employed in one of 11 California based companies. They were followed until 1969 during this time, 257 of these men developed coronary heart disease (CHD). You can read this data in with the code below. You can access this dataset with the following code:
 
-```{R}
-
+```{r}
 suppressMessages(library(foreign))
 wcgs <- read.dta("https://drive.google.com/uc?export=download&id=0B8CsRLdwqzbzYWxfN3ExQllBQkU")
 ```
-
-The data has the following variables:
-
-
 
 WCGS has the following variables:
 
@@ -100,7 +84,26 @@ B. Assign all the numeric columns of the original WCGS dataset to a new dataset 
 C. Using a loop and your new function, standardize all the variables WCGS.new dataset.
 D. What should the mean and standard deviation of all your new standardized variables be? Test your prediction by running a loop
 
+```{r}
+standardize.me <- function(x){
+  m <- mean(x, na.rm = TRUE)
+  sd <- sd(x, na.rm = TRUE)
+  return((x - m) / sd)
+}
 
+library(dplyr)
+WCGS.new <- select(wcgs, id, age, height, weight, sbp, dbp, chol, ncigs, time169, bmi)
+
+for(i in 1:length(names(WCGS.new))){
+  WCGS.new[,i] <- standardize.me(WCGS.new[,i])
+}
+
+for(i in 1:length(names(WCGS.new))){
+  print(names(WCGS.new)[i])
+  print(mean(WCGS.new[,i], na.rm = TRUE))
+  print(sd(WCGS.new[,i], na.rm=TRUE))
+}
+```
 
 
 ### Question 2: Looping to Calculate
@@ -108,3 +111,28 @@ D. What should the mean and standard deviation of all your new standardized vari
 A. Using a loop, calculate the mean weight of the subjects separated by the type of CHD they have.
 B. Now do the same thing, but now don’t use a loop
 
+```{r}
+noCHD <- numeric(0)
+MIorSD <- numeric(0)
+silentMI <- numeric(0)
+angina <- numeric(0)
+for(i in 1:nrow(wcgs)){
+  if(wcgs$typchd69[i] == "no CHD"){
+    noCHD <- append(noCHD, wcgs$weight[i])
+  } else if(wcgs$typchd69[i] == "MI or SD"){
+    MIorSD <- append(MIorSD, wcgs$weight[i])
+  } else if(wcgs$typchd69[i] == "silent MI"){
+    silentMI <- append(silentMI, wcgs$weight[i])
+  } else if(wcgs$typchd69[i] == "angina"){
+    angina <- append(angina, wcgs$weight[i])
+  } 
+}
+mean(noCHD, na.rm=TRUE)
+mean(MIorSD, na.rm=TRUE)
+mean(silentMI, na.rm = TRUE)
+mean(angina, na.rm = TRUE)
+
+wcgs %>%
+  group_by(typchd69) %>%
+  summarize(mean = mean(weight))
+```
